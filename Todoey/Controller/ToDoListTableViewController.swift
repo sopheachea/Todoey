@@ -10,18 +10,26 @@ import UIKit
 class ToDoListTableViewController: UITableViewController {
 
     var itemArray = [Items]()
-    let userDefaults = UserDefaults.standard
+//    let userDefaults = UserDefaults.standard
+    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        itemArray.append(Items(title: "Find Milk"))
-        itemArray.append(Items(title: "Buy Eggos"))
-        itemArray.append(Items(title: "Destroy Demogorgon"))
         
-        if let item = userDefaults.array(forKey: "ToDoListArray") as? [Items]{
-            itemArray = item
-        }
+        
+//        print(dataFilePath)
+        
+//        itemArray.append(Items(title: "Find Milk"))
+//        itemArray.append(Items(title: "Buy Eggos"))
+//        itemArray.append(Items(title: "Destroy Demogorgon"))
+        
+        loadItem()
+        
+//        if let item = userDefaults.array(forKey: "ToDoListArray") as? [Items]{
+//            itemArray = item
+//        }
     }
 
     // MARK: - Table view data source
@@ -71,15 +79,14 @@ class ToDoListTableViewController: UITableViewController {
            
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done  // this line is equal to the if statement above
         
+        saveItems()
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+//        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .none
+//        } else {
+//            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
+//        }
         
-        
-        tableView.reloadData()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -98,9 +105,10 @@ class ToDoListTableViewController: UITableViewController {
             newItem.title = textField.text!
             self.itemArray.append(newItem)
             
-            self.userDefaults.set(self.itemArray, forKey: "ToDoListArray")
+//            self.userDefaults.set(self.itemArray, forKey: "ToDoListArray")
             
-            self.tableView.reloadData()
+            self.saveItems()
+            
         }
         
         alert.addTextField { (alertTextField) in
@@ -114,5 +122,30 @@ class ToDoListTableViewController: UITableViewController {
         
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    //MARK: Model Manupulation Methods
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        
+        do{
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        }catch{
+            print("Error encoding item array, \(error)")
+        }
+        tableView.reloadData()
+    }
+ 
+    func loadItem(){
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do{
+                itemArray = try decoder.decode([Items].self, from: data)
+            } catch {
+                print("Error decoding item array, \(error)")
+            }
+            
+        }
     }
 }
